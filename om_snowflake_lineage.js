@@ -6,22 +6,22 @@
 //
 // (a) Use SERVICE_NAME hard-coded below:
 //
-//     fetch('https://gist.githubusercontent.com/ulixius9/2586f03073047b30cc3a3d0cb29bf244/raw/om_snowflake_lineage.js').then(r=>r.text()).then(eval)
+//     fetch('https://raw.githubusercontent.com/ulixius9/code-samples/main/om_snowflake_lineage.js').then(r=>r.text()).then(eval)
 //
-// (b) Override the service name without editing the gist:
+// (b) Override the service name without editing the script:
 //
-//     window.OM_SF_SERVICE='your_snowflake_service';fetch('https://gist.githubusercontent.com/ulixius9/2586f03073047b30cc3a3d0cb29bf244/raw/om_snowflake_lineage.js').then(r=>r.text()).then(eval)
+//     window.OM_SF_SERVICE='your_snowflake_service';fetch('https://raw.githubusercontent.com/ulixius9/code-samples/main/om_snowflake_lineage.js').then(r=>r.text()).then(eval)
 //
 // (c) If you get 401 — the script couldn't auto-find your JWT. Copy your token
 //     from OM UI: Settings -> Bots -> ingestion-bot -> Token  (or any user JWT),
 //     then run:
 //
-//     window.OM_TOKEN='PASTE_JWT_HERE';window.OM_SF_SERVICE='your_service';fetch('https://gist.githubusercontent.com/ulixius9/2586f03073047b30cc3a3d0cb29bf244/raw/om_snowflake_lineage.js').then(r=>r.text()).then(eval)
+//     window.OM_TOKEN='PASTE_JWT_HERE';window.OM_SF_SERVICE='your_service';fetch('https://raw.githubusercontent.com/ulixius9/code-samples/main/om_snowflake_lineage.js').then(r=>r.text()).then(eval)
 //
 // (d) Restrict to schemas whose name starts with a prefix (case-insensitive),
 //     e.g. only schemas starting with "prv":
 //
-//     window.OM_SCHEMA_PREFIX='prv';fetch('https://gist.githubusercontent.com/ulixius9/2586f03073047b30cc3a3d0cb29bf244/raw/om_snowflake_lineage.js').then(r=>r.text()).then(eval)
+//     window.OM_SCHEMA_PREFIX='prv';fetch('https://raw.githubusercontent.com/ulixius9/code-samples/main/om_snowflake_lineage.js').then(r=>r.text()).then(eval)
 //
 //     Set window.OM_SCHEMA_PREFIX='' to disable the filter.
 //
