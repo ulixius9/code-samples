@@ -18,12 +18,13 @@
 //
 //     window.OM_TOKEN='PASTE_JWT_HERE';window.OM_SF_SERVICE='your_service';fetch('https://raw.githubusercontent.com/ulixius9/code-samples/main/om_snowflake_lineage.js').then(r=>r.text()).then(eval)
 //
-// (d) Restrict to schemas whose name starts with a prefix (case-insensitive),
-//     e.g. only schemas starting with "prv":
+// (d) Restrict to a single schema — pass its FQN (service.database.schema).
+//     This queries the API directly for that schema instead of scanning
+//     the whole service:
 //
-//     window.OM_SCHEMA_PREFIX='prv';fetch('https://raw.githubusercontent.com/ulixius9/code-samples/main/om_snowflake_lineage.js').then(r=>r.text()).then(eval)
+//     window.OM_SCHEMA_FQN='snowflake_prod.my_db.my_schema';fetch('https://raw.githubusercontent.com/ulixius9/code-samples/main/om_snowflake_lineage.js').then(r=>r.text()).then(eval)
 //
-//     Set window.OM_SCHEMA_PREFIX='' to disable the filter.
+//     Leave window.OM_SCHEMA_FQN unset (or '') to scan the whole service.
 //
 // After it finishes:
 //   - Summary table is printed via console.table
@@ -42,33 +43,12 @@
 (async () => {
   const SERVICE_NAME = window.OM_SF_SERVICE || 'snowflake_prod'; // <-- edit me
   const SAME_SERVICE_ONLY = false; // true = only edges within SERVICE_NAME; false = any Snowflake service
-  const SCHEMA_PREFIX =
-    window.OM_SCHEMA_PREFIX !== undefined ? window.OM_SCHEMA_PREFIX : 'prv'; // case-insensitive; '' = no filter
+  // Restrict to a single schema by FQN (service.database.schema).
+  // '' = scan every table in SERVICE_NAME.
+  const SCHEMA_FQN =
+    window.OM_SCHEMA_FQN !== undefined ? window.OM_SCHEMA_FQN : '';
   const PAGE_SIZE = 100;
   const base = `${location.origin}/api/v1`;
-
-  // Extract the schema name from a table FQN: service.database.schema.table
-  // (FQN parts may be quoted with "..." if they contain dots)
-  const schemaOfTableFqn = (fqn) => {
-    if (!fqn) return '';
-    const parts = [];
-    let buf = '';
-    let inQuotes = false;
-    for (const ch of fqn) {
-      if (ch === '"') inQuotes = !inQuotes;
-      else if (ch === '.' && !inQuotes) { parts.push(buf); buf = ''; }
-      else buf += ch;
-    }
-    parts.push(buf);
-    return parts[2] || '';
-  };
-
-  const matchesSchemaPrefix = (fqn) => {
-    if (!SCHEMA_PREFIX) return true;
-    return schemaOfTableFqn(fqn)
-      .toLowerCase()
-      .startsWith(SCHEMA_PREFIX.toLowerCase());
-  };
 
   // ---- Auth: OM UI uses JWT bearer tokens. Try a few common locations. ----
   const getToken = () => {
@@ -137,12 +117,16 @@
     return t === 'Snowflake';
   };
 
-  // 1. Page through all tables in the service
+  // 1. Page through tables — scoped to a schema if SCHEMA_FQN is set,
+  //    otherwise the whole service.
   const tables = [];
   let after = '';
+  const tablesQuery = SCHEMA_FQN
+    ? `databaseSchema=${encodeURIComponent(SCHEMA_FQN)}`
+    : `service=${encodeURIComponent(SERVICE_NAME)}`;
   while (true) {
     const url =
-      `${base}/tables?service=${encodeURIComponent(SERVICE_NAME)}` +
+      `${base}/tables?${tablesQuery}` +
       `&limit=${PAGE_SIZE}&fields=service` +
       (after ? `&after=${encodeURIComponent(after)}` : '');
     const page = await j(url);
@@ -150,17 +134,7 @@
     after = page.paging?.after;
     if (!after) break;
   }
-  console.log(`Found ${tables.length} tables in ${SERVICE_NAME}`);
-
-  if (SCHEMA_PREFIX) {
-    const before = tables.length;
-    const filtered = tables.filter((t) => matchesSchemaPrefix(t.fullyQualifiedName));
-    tables.length = 0;
-    tables.push(...filtered);
-    console.log(
-      `Schema filter "${SCHEMA_PREFIX}*" → ${tables.length}/${before} tables`
-    );
-  }
+  console.log(`Found ${tables.length} tables in ${SCHEMA_FQN || SERVICE_NAME}`);
 
   // 2. Fetch lineage for each, keep only Snowflake-to-Snowflake edges
   const results = [];
